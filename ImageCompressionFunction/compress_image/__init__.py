@@ -15,7 +15,6 @@ def compress_image(req: func.HttpRequest) -> func.HttpResponse:
         req_body = req.get_json()
         base64_string = req_body.get('imageBase64')
         quality = req_body.get('quality', 80)
-        max_width = req_body.get('maxWidth', 1024)
 
         if not base64_string:
             return func.HttpResponse(
@@ -26,16 +25,16 @@ def compress_image(req: func.HttpRequest) -> func.HttpResponse:
         image_data = base64.b64decode(base64_string)
         image = Image.open(io.BytesIO(image_data))
 
+        # Handle transparency
         if image.mode in ('RGBA', 'LA'):
             background = Image.new('RGB', image.size, (255, 255, 255))
             background.paste(image, mask=image.convert('RGBA').split()[-1])
             image = background
 
-        if image.width > max_width:
-            ratio = max_width / image.width
-            new_height = int(image.height * ratio)
-            image = image.resize((max_width, new_height), Image.Resampling.LANCZOS)
+        # 🔄 Resize to fixed size 400x600
+        image = image.resize((400, 600), Image.Resampling.LANCZOS)
 
+        # Compress image
         output_buffer = io.BytesIO()
         image.save(output_buffer, format="JPEG", quality=quality, optimize=True)
         compressed_image = output_buffer.getvalue()
