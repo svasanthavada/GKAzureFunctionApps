@@ -17,43 +17,33 @@ def compress_image(req: func.HttpRequest) -> func.HttpResponse:
         quality = req_body.get('quality', 80)
 
         if not base64_string:
-            return func.HttpResponse(
-                "Please provide a base64-encoded image in the request body.",
-                status_code=400
-            )
+            return func.HttpResponse("Missing imageBase64", status_code=400)
 
         image_data = base64.b64decode(base64_string)
         image = Image.open(io.BytesIO(image_data))
 
-        # Handle transparency
         if image.mode in ('RGBA', 'LA'):
             background = Image.new('RGB', image.size, (255, 255, 255))
             background.paste(image, mask=image.convert('RGBA').split()[-1])
             image = background
 
-        # 🔄 Resize to fixed size 400x600
         image = image.resize((400, 600), Image.Resampling.LANCZOS)
 
-        # Compress image
         output_buffer = io.BytesIO()
         image.save(output_buffer, format="JPEG", quality=quality, optimize=True)
-        compressed_image = output_buffer.getvalue()
 
-        compressed_base64 = base64.b64encode(compressed_image).decode('utf-8')
+        compressed_base64 = base64.b64encode(output_buffer.getvalue()).decode("utf-8")
 
         return func.HttpResponse(
             json.dumps({
-                'compressedImageBase64': compressed_base64,
-                'originalSize': len(image_data),
-                'compressedSize': len(compressed_image)
+                "compressedImageBase64": compressed_base64,
+                "originalSize": len(image_data),
+                "compressedSize": len(output_buffer.getvalue())
             }),
             status_code=200,
             mimetype="application/json"
         )
 
     except Exception as e:
-        logging.error(f"Error processing image: {str(e)}")
-        return func.HttpResponse(
-            f"Error processing image: {str(e)}",
-            status_code=500
-        )
+        logging.exception("Error during image compression")
+        return func.HttpResponse(str(e), status_code=500)
