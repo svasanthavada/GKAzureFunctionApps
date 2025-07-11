@@ -5,10 +5,7 @@ import base64
 import io
 import json
 
-app = func.FunctionApp()
-
-@app.route(route="compress_image", auth_level=func.AuthLevel.ANONYMOUS)
-def compress_image(req: func.HttpRequest) -> func.HttpResponse:
+def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Processing image compression request.')
 
     try:
@@ -17,16 +14,20 @@ def compress_image(req: func.HttpRequest) -> func.HttpResponse:
         quality = req_body.get('quality', 80)
 
         if not base64_string:
-            return func.HttpResponse("Missing imageBase64", status_code=400)
+            return func.HttpResponse(
+                "Please provide a base64-encoded image in the request body.",
+                status_code=400
+            )
 
         image_data = base64.b64decode(base64_string)
         image = Image.open(io.BytesIO(image_data))
 
         if image.mode in ('RGBA', 'LA'):
             background = Image.new('RGB', image.size, (255, 255, 255))
-            background.paste(image, mask=image.convert('RGBA').split()[-1])
+            background.paste(image, mask=image.split()[-1])
             image = background
 
+        # Resize to 400x600
         image = image.resize((400, 600), Image.Resampling.LANCZOS)
 
         output_buffer = io.BytesIO()
@@ -36,14 +37,11 @@ def compress_image(req: func.HttpRequest) -> func.HttpResponse:
 
         return func.HttpResponse(
             json.dumps({
-                "compressedImageBase64": compressed_base64,
-                "originalSize": len(image_data),
-                "compressedSize": len(output_buffer.getvalue())
+                "compressedImageBase64": compressed_base64
             }),
-            status_code=200,
             mimetype="application/json"
         )
 
     except Exception as e:
-        logging.exception("Error during image compression")
-        return func.HttpResponse(str(e), status_code=500)
+        logging.exception("Error in image processing")
+        return func.HttpResponse(f"Error: {str(e)}", status_code=500)
