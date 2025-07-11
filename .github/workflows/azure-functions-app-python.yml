@@ -26,7 +26,7 @@ jobs:
       run: |
         cd "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r requirements.txt --target=".python_packages/lib/site-packages"
 
     - name: 'Azure Login (RBAC)'
       uses: azure/login@v1
