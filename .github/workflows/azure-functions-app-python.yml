@@ -5,8 +5,8 @@ on:
     branches: ["main"]
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'       # Path to your Azure Function project
-  PYTHON_VERSION: '3.10'                    # Python version for setup
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './ImageCompressionFunction'  # updated
+  PYTHON_VERSION: '3.10'
 
 jobs:
   build-and-deploy:
@@ -24,10 +24,9 @@ jobs:
 
     - name: 'Install Dependencies'
       run: |
-        pushd '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        cd "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
         python -m pip install --upgrade pip
-        pip install -r requirements.txt --target=".python_packages/lib/site-packages"
-        popd
+        pip install -r requirements.txt
 
     - name: 'Azure Login (RBAC)'
       uses: azure/login@v1
