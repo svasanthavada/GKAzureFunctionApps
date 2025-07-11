@@ -19,7 +19,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400
             )
 
+        # Convert base64 to bytes
         image_data = base64.b64decode(base64_string)
+        original_size = len(image_data)  # ✅ track original size early
+
+        # Load the image
         image = Image.open(io.BytesIO(image_data))
 
         if image.mode in ('RGBA', 'LA'):
@@ -27,17 +31,23 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             background.paste(image, mask=image.split()[-1])
             image = background
 
-        # Resize to 400x600
+        # Resize to fixed 400x600
         image = image.resize((400, 600), Image.Resampling.LANCZOS)
 
+        # Compress to JPEG
         output_buffer = io.BytesIO()
         image.save(output_buffer, format="JPEG", quality=quality, optimize=True)
+        compressed_image = output_buffer.getvalue()
+        compressed_size = len(compressed_image)  # ✅ get compressed size
 
-        compressed_base64 = base64.b64encode(output_buffer.getvalue()).decode("utf-8")
+        # Encode compressed image to base64
+        compressed_base64 = base64.b64encode(compressed_image).decode("utf-8")
 
         return func.HttpResponse(
             json.dumps({
-                "compressedImageBase64": compressed_base64
+                "compressedImageBase64": compressed_base64,
+                "originalSize": original_size,
+                "compressedSize": compressed_size
             }),
             mimetype="application/json"
         )
