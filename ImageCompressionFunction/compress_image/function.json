@@ -1,13 +1,13 @@
 {
   "scriptFile": "__init__.py",
+  "entryPoint": "compress_image", 
   "bindings": [
     {
       "authLevel": "anonymous",
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
-      "methods": ["post"],
-      "route": "compress_image"
+      "methods": ["post"]
     },
     {
       "type": "http",
