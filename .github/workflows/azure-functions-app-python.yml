@@ -5,7 +5,7 @@ on:
     branches: ["main"]
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: './AzureFunc'  
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './AzureFunc'   # ✅ Root of function folders
   PYTHON_VERSION: '3.10'
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt --target=".python_packages/lib/site-packages"
 
-    - name: 'Azure Login (RBAC)'
+    - name: 'Azure Login'
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
@@ -36,7 +36,7 @@ jobs:
     - name: 'Deploy to Azure Function App'
       uses: Azure/functions-action@v1
       with:
-        app-name: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}
+        app-name: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}  # ✅ Must be ImageCompressionFunction1
         package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
         scm-do-build-during-deployment: true
         enable-oryx-build: true
