@@ -3,14 +3,37 @@ import azure.functions as func
 import base64
 import tempfile
 import os
-import pdfkit
-from docx2pdf import convert as docx2pdf_convert
+
+from weasyprint import HTML
+from docx import Document
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+
+def docx_to_pdf(input_path, output_path):
+    """Convert .docx to PDF using python-docx + reportlab (basic text only)."""
+    doc = Document(input_path)
+
+    c = canvas.Canvas(output_path, pagesize=letter)
+    width, height = letter
+    y = height - 40
+
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if text:
+            c.drawString(40, y, text)
+            y -= 20
+            if y < 40:  # new page if needed
+                c.showPage()
+                y = height - 40
+
+    c.save()
+
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Processing file conversion request...")
 
     try:
-        # Input should contain fileContent (base64) and fileName
+        # Expect JSON: { "fileName": "sample.html", "fileContent": "<base64>" }
         req_body = req.get_json()
         file_content = req_body.get("fileContent")
         file_name = req_body.get("fileName")
@@ -24,37 +47,33 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         # Decode incoming file
         file_bytes = base64.b64decode(file_content)
 
-        # Create a temporary directory
+        # Temp dir for work
         with tempfile.TemporaryDirectory() as tmpdir:
             input_path = os.path.join(tmpdir, file_name)
             output_path = os.path.join(tmpdir, "output.pdf")
 
-            # Save input file
             with open(input_path, "wb") as f:
                 f.write(file_bytes)
 
             # Conversion logic
             if file_name.lower().endswith(".html"):
-                pdfkit.from_file(input_path, output_path)
+                HTML(input_path).write_pdf(output_path)
             elif file_name.lower().endswith(".docx"):
-                docx2pdf_convert(input_path, output_path)
+                docx_to_pdf(input_path, output_path)
             else:
                 return func.HttpResponse(
                     "Unsupported file type. Only .html and .docx are allowed.",
                     status_code=400
                 )
 
-            # Read back PDF
             with open(output_path, "rb") as f:
                 pdf_bytes = f.read()
 
-        # Encode PDF as base64 for Power Automate
-        pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
-
+        # Return PDF as binary (like OneDrive Convert to PDF)
         return func.HttpResponse(
-            body=pdf_base64,
+            body=pdf_bytes,
             status_code=200,
-            mimetype="text/plain"
+            mimetype="application/pdf"
         )
 
     except Exception as e:

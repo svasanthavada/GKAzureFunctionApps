@@ -1,5 +1,5 @@
 azure-functions
 Pillow
-pdfkit
 weasyprint
-docx2pdf
+python-docx
+reportlab
