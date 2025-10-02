@@ -5,7 +5,7 @@ on:
     branches: ["main"]
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: './AzureFunc'
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './AzureFunc'   # Root folder for functions
   PYTHON_VERSION: '3.10'
 
 jobs:
