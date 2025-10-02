@@ -5,8 +5,8 @@
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
-      "methods": ["post"],
-      "route": "compress_image"
+      "methods": [ "post" ],
+      "route": "convert_to_pdf"
     },
     {
       "type": "http",
